@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random as rand
+import time
 
 # Here we will be defining some constants:
 radii = [0.5, 1.0]    # 0: regular nut, 1: Brazilian nut
@@ -98,6 +99,27 @@ def check_overlap_nuts(nut1, position1, nut2, position2):
     else: 
         return True
 
+def nearest_neighbor(c_n, nuts, positions):
+    """ 
+    Returns the nearest neighbor between the current nut and the set of nuts. 
+
+    Args:
+        c_n: index of the nut to be evaluated
+        nuts: array containing all the nut types
+        positions: array containing the positions of all the nuts
+    """
+
+    nearest_neighbor = None
+    nearest_neighbor_nut = None
+    assert len(nuts) == len(positions), "Nut types and positions arrays should be the same length"
+    for n in range(len(nuts)):
+        d = np.sqrt((positions[n][0]-positions[c_n][0]-radii[int(nuts[n])]-radii[int(nuts[c_n])])**2 \
+                  + (positions[n][1]-positions[c_n][1]-radii[int(nuts[n])]-radii[int(nuts[c_n])])**2)
+        if (nearest_neighbor == None) or (d > 0.0 and d < nearest_neighbor) :
+            nearest_neighbor = d
+            nearest_neighbor_nut = n
+    return nearest_neighbor, c_n, nearest_neighbor_nut
+     
 def largest_nearest_neighbor(nuts, positions):
     """
     Returns the largest possible shortest distance between the given array of particles.
@@ -114,12 +136,12 @@ def largest_nearest_neighbor(nuts, positions):
     a = 0
     b = 0
     for i in range(len(nuts)):
-        for j in  range(len(nuts)):
-            dij = np.sqrt((positions[i][0]-positions[j][0]-radii[int(nuts[i])]-radii[int(nuts[j])])**2 + (positions[i][1]-positions[j][1]-radii[int(nuts[i])]-radii[int(nuts[j])])**2)
-            if dij > largest_distance:
-                largest_distance = dij
-                a = i
-                b = j 
+        value, n1, n2 = nearest_neighbor(i, nuts, positions)
+        if value > largest_distance:
+            a = n1
+            b = n2
+            largest_distance = value
+
     return largest_distance, a, b
 
 def energy(positions):
@@ -150,44 +172,55 @@ def shake_box(positions):
         new_positions[i] = np.array([positions[i][0], 2*positions[i][1]])
     return new_positions
 
-def mc_method(nuts, positions, max_moves, max_attempts):
+def mc_method(nuts, positions, beta_value, d_e_minimum):
     """
-    Applies the Monte Carlo method to the nuts in an effort to minimize the energy of a given configuration
-    by applying random displacements in the x and the y positions.
-
-    Args: 
-        nuts: array contaning the types of nuts.
-        positions: 2D array containing the x and y values of the nuts
-        max_moves: maxium amount of accepted moves
-        max_attempts: maximum amount of move attempts
+    Metropoli Monte Carlo method to _settle_ a set of nuts.
+    
+    Runs until after the difference in energy after a 1000 attempted moves is lower than the threshold. 
+    **Note that we assume that all the nuts are the same weight.**
+    
+    Input: 
     
     Returns:
-        nuts: array containing the types of nuts.
-        current_positions: new configuration after applying the method
+    
     """
     current_positions = np.copy(positions)
-    iters = 0
-    while iters < 100:
-        iters += 1
-        max_step_length = largest_nearest_neighbor(nuts,current_positions)[0]
-        inner_iters = 0
-        while inner_iters < 1000:
-            inner_iters += 1
+    
+    # We will exit this loop once d_e > d_e_minimum
+    while True:
+        attempts = 0 
+        d_e = 0
+        max_step_length, nut1, nut2 = largest_nearest_neighbor(nuts,current_positions)
+
+        while attempts < 1000:
             current = rand.randrange(max_n)
-            x_step = rand.uniform(- max_step_length, max_step_length)
-            y_step = rand.uniform(- max_step_length, 0)
+
+            attempts += 1
+            step = rand.uniform(0, max_step_length)
+            angle = rand.uniform(0, 2*np.pi)
+            x_step = step*np.cos(angle)
+            y_step = step*np.sin(angle)
+
+            
+            # Check if the change in energy is positive (i.e. positive y_step)
+            if y_step > 0:
+                prob = np.exp(- beta_value*y_step*9.81)
+                if rand.uniform(0,1) > prob: # Now we will make the attempt pass the probability test
+                    continue
+            
             new_positions = np.copy(current_positions)
             new_nuts = np.copy(nuts)
+            
             new_positions[current] = [new_positions[current][0]+x_step, new_positions[current][1]+y_step]
             nuts_to_check = np.delete(new_nuts, current)
             positions_to_check = np.delete(new_positions,current, axis=0)
 
             # Testing for overlap with walls
             if check_overlap_walls(nuts[current], new_positions[current]):
-                    continue
+                continue
 
             # Testing for collisions
-            passed_collisions = True        
+            passed_collisions = True
             for i in range(len(nuts_to_check)):
                 if check_overlap_nuts(nuts_to_check[i], positions_to_check[i], nuts[current], new_positions[current]):
                     passed_collisions = False
@@ -195,14 +228,27 @@ def mc_method(nuts, positions, max_moves, max_attempts):
             if not passed_collisions:
                 continue
 
-            # Test for energy:
-            if energy(positions) > energy(new_positions):
-                current_positions = new_positions
-                valid_move = True
+            d_e += y_step*9.81
+            
+            current_positions = new_positions
+            #fig1 = display_box(nuts, current_positions,0)
+            #plt.savefig("final_config.png")
+            #plt.close(fig1)
+            
+            
+            # If we moved either of the nuts involved in the largest nearest neighbor value, recompute it
+            if current == nut1 or current == nut2:
+                max_step_length, nut1, nut2 = largest_nearest_neighbor(nuts, current_positions)
+    
+        if d_e > d_e_minimum:
+            break
+                
     return nuts, current_positions
 
 # Actual program
-max_n = 10
+start = time.time()
+
+max_n = 50
 nuts, positions = initial_preparation(max_n, 0)
 fig1 = display_box(nuts, positions,0)
 plt.savefig("initial_config.png")
@@ -210,10 +256,13 @@ positions_after_shake = np.copy(positions)
 
 shake_iters = 10
 for i in range(shake_iters):
-    next_nuts, positions_after_shake = mc_method(nuts, positions_after_shake, 0, 0)
+    next_nuts, positions_after_shake = mc_method(nuts, positions_after_shake, 10**16, -1)
     if i is not shake_iters-1:
         positions_after_shake = shake_box(positions_after_shake)
 
     
 fig2 = display_box(nuts, positions_after_shake,0)
 plt.savefig("final_config.png")
+
+end = time.time()
+print(end - start, "s")

@@ -25,9 +25,8 @@
 
 \begin{document}
 
-\title{Lab Report Template for CHS Physics 211 v2.0} %Title should be concise and to the point  
-\author{Put your name and your partner's names here} %Your name first
-
+\title{PHSA0030  Mini Project - Brazilian nuts simulation using a Monte Carlo approach} %Title should be concise and to the point  
+\author{Joel Pérez Ferrer} %Your name first
 
 \date{\today}  % This will automatically put today's date in the report
 
@@ -38,23 +37,46 @@
 %%%%% If you want to omit something in this lab, place a % sign to the left of it and it won't show up on the lab, like this line!
 
 \begin{abstract} 
-	The abstract should be a short 3-5 sentence paragraph. In it, you should state the hypothesis, what you did, and what you found. The abstract is meant to be a very short summary of your paper to follow. It is a good suggestion to write the abstract last in your report after you have written everything else. This will allow you to best summarize your work. 
+  The formal report should contain: an abstract; the background to the project; a summary of the work done (though not in a narrative form); the results and a discussion of their significance; any conclusions that you have drawn, and possibly suggestions for future work, or where you would take the project given more time; and a bibliography.
+
+
 \end{abstract}
 
-\section{Introduction}
-	 
-    This template is designed to be a guide for completing lab reports for Physics 211. Please note that although I have provided this template, you are not under any obligation to use it. It simply provides a nice general design and tips for writing an exceptional physics laboratory report. As you use this template, please make a copy of this code and copy/paste it into a new document so that you will always have access to this original version to look at. It would lso be a good idea to have a printed copy of the pdf template and code to reference when needed. In addition, the formatting for various things like data tables, graphs, citations, etc. is in here for convenience. Please read through the code provided carefully as there are lots of things in \% that you can't see on the generated pdf (like how to include pictures, equations, and LOTS of notes on how to do everything). What follows is a general description of what each section of the lab report should contain. Finally, please note that there are equations and useful latex code at the bottom of this report.\\
-    
-    The introduction is usually a  paragraph or two. You should start off by stating the problem of the experiment and why the problem is worth studying. If there is any historical or background knowledge required to understand your report, you should state it here. Finally, you should state your hypothesis as an if-then statement. \cite{1}
-    
-    %note the cite above. That is an in text citation. By putting citations in your bibliography, you can cite in text simply using the \cite{} command and putting the number of the citation in the {} 
-    
+\section{Background} % to the project
 
-    
-\section{Experimental Setup}
-	In this section, you should explain your experiment in detail. The usual method is that you first explain what you did, then you explain how you did it. I.e. first explain the data you are trying to collect. Then explain (citing relevant equations as necessary) why this data is necessary in order to prove/disprove your hypothesis. Finally, explain how you collected the data, citing both the materials used as well as stating their purpose and what they are used to collect or to do. You can break up this section into two sections if you wish. The first would be materials and the second would be procedure. 
+Empirical observations show that if a container of a mix of nuts of different sizes is shaken thoroughly, the larger pieces (such as the brazil nut kernels) tend to rise to the top. In this project we will be using a Monte Carlo method is an effort to simulate this physical situation. More specifically, we will be using the Metropolis approach as described in the course from which this assignment is part of.
 
-%%%%%%%%%%Here is a sample bulleted list that is often useful for the materials section. You can also number or letter your materials to easily refer to them later on
+\subsection{Monte Carlo simulation in a nutshell}
+In our simulation we will start with a distribution of elements, select a random element and displace it a random distance in a random direction. If the movement overall lowers the energy of the system we will accept it as valid. But in order to avoid local minima we will introduce a probability for an energetically \textit{worse} movement to be done. The probability used is $ p = e^{\frac{\Delta E}{k_B T}} $ Where the energy change is $\Delta E$, thus the probability decreases as the energy change increases. The probability also increases as the temperature increases, which can be observed in nature.
+
+
+\section{Summary} % of the work done, though not in a narrative form
+In the simulation we assumed that the brazilian nuts were two dimensional disks and the regular nuts as disks of half of the radius of the disks representing the brazilian nuts. The box has a limited horizontal width but we assume it to be infinitely tall.
+
+\subsection{Comment on the tools used}
+For this project, Python 3.7 was used, along with the libraries numpy for the data structures and calculations and matplotlib for plotting and graphics. Additionally, Jupyter notebooks were used as logbooks detailing the progress and stages of the project.
+
+\subsection{Initial configuration of the system}
+As per the guidelines of the assignment, the initial configuration of the system was a brazilian nut at the bottom and then regular nuts spread randomly in the x coordinate in increasingly high positions. 
+
+\subsection{Monte Carlo method}
+The Montecarlo approached was implemented as follows: First a particle in the system is chosen at random. Then a step size is calculated at random based on the value for the largest nearest neighbor of the system. The angle of the displacement is also chosen randomly. If the movement is energetically better (i.e. $\Delta y < 0$) it is accepted, otherwise it is checked against a probability $ p = e^{\frac{\Delta E}{k_B T}} $. Then the move is tested for collisions with the walls or with other particles. If the move fulfilled all these tests it is be taken as \textit{accepted} and the system is updated. The change in energy achieved by this move is accumulated in some $\Delta E$ variable that keeps track of the change in energy achieved every 1000 attempts. As the particles become incrementally closer to each other and to the bottom of the bottom of the box, both the value for the largest nearest neighbor drops and the frequency of accepted moves drop substantially. This results eventually results in $\Delta E$ not reaching an arbitrary threshold and thus th system being considered \textit{settled}. From there it can be tested whether the big nuts are on top and otherwise the system may be \textit{shaken}(i.e. all the $y$ values multiplied by $2$) and the process started all over. 
+
+\section{Results}
+
+\subsection{Relation between $n_{nut}$ and $n_{shakes}$}
+Evidently, the increase of the number of nuts in the system $n_{nut}$ resulted in an overall increase in the number of shakes $n_{shakes}$ needed in order to take the brazilian nut to the top.
+
+However, a factor that was highly relevant in order to judge the value of the investigations presented in the following subsections was the standard deviation $\sigma_{shakes}$ between consecutive simulations of the same configurations. This value was revealed to decrease as $n_{nut}$ increases. Thus a high value for $n_{nut}$ is preferred in order to minimize the uncertainity in our results. However, the computational times needed to simulate systems with very large $n_{nut}$ values quickly start to become non-trivial. 
+
+\subsection{Effects of $r_{brazilian}/r$}
+
+\subsection{Study of the energy}
+
+\subsection{Temperature and $p$}
+
+\section{Future work} % where you the move take the project given more time
+
 \begin{description}
   \item[$\bullet$] 61cm ramp
   \item[$\bullet$] stack of textbooks
@@ -68,28 +90,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section{Data}
 
-In this section you should explain your results. You should not interpret the results in this section, that is for the analysis/conclusion portion of the lab. Again, you are merely stating the results of your experiment here. Please avoid gigantic tables with every data point in existence that no one will ever read. Use data tables wisely to summarize large amounts of data or to highlight important trends/results. If you want to display large amounts of data, often a graph/histogram, pie chart, etc. is the wiser choice. 
-
-%%%%%Here is a nice sample data table%%%%%%%%%%
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|} %this specifies how many columns to make. For example. if you only wanted three columns, it would look like this : {|c|c|c|}
-\hline
-Angle of incline & Trial 1 (Sec.) & Trial 2 (Sec.) & Trial 3 (Sec.) & Average Time (Sec.)\\[0.5ex] %Title for each column
-\hline\hline
-$2^{\circ}$&$2.615$&$2.73$5&$2.585$&$2.645$\\ %data for row 1
-\hline
-$4^{\circ}$&$1.8$&$1.875$&$1.685$&$1.787$\\ %data for row 2
-\hline
-$6^{\circ}$&$1.445$&$1.39$&$1.44$&$1.425$\\ %data for row 3
-\hline
-8$^{\circ}$&1.195&1.31&1.1&1.202\\ %data for row 4
-\hline
-\end{tabular}
-\end{center} 
- 
-% When making a table, make sure every data point is separated by $ to signify a different cell in your table. To end a row, use the \\ to move to the next row. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -153,7 +154,7 @@ analyze the data. In this section you will interpret your results. You need to l
 
 Then describe how your experimental results substantiate/agree with the theory. (This is not a single statement that your results agree or disagree with theory.) When comparison values are available, discuss the agreement using either uncertainty and/or percent differences. This leads into the discussion of the sources of error. Your discussion should include the calculation of averages and standard deviation to be able to describe precision of experiment. All data points should be plotted $\pm$ two standard deviations and compared with theoretical data to interpret accuracy. It is ok to say that your results were inconclusive. It is important to cite all possible sources of error and state specifically how you believed they affected the collected data. If you get a result or an uncertainty that is ridiculous (or just really big/small), show that you have noticed and thought about it, not just copied a number from your calculator and moved on. \\
 
-For example, when rolling a ball down a ramp, you may not have taken in account the effects of rolling friction or the fact that some gravitational potential energy is converted into rotational kinetic energy. Both of these would cause the overall time for the ball to roll down the ramp to increase.
+For example, when rolling a ball down a ramp, you may not have taken in account the effects of rolling friction or the fact that some gravitational potential energy is converted into rotational kinetic energy. Both of these the move cause the overall time for the ball to roll down the ramp to increase.
 
 
 \section{Conclusion}
